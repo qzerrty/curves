@@ -1,6 +1,7 @@
 import React, {
     MouseEventHandler,
     useCallback,
+    useRef,
     useState,
     WheelEventHandler,
 } from 'react';
@@ -46,14 +47,14 @@ const Diagram: React.FC<{ scale: number }> = ({ scale }) => {
 
     const [toggle, setToggle] = useState(true);
 
-    const [color, setColor] = useState('green');
+    const [color, setColor] = useState('black');
     const [strokeWidth, setStrokeWidth] = useState(1);
     const [curviness, setCurviness] = useState(1);
     const [offset, setOffset] = useState(0);
     const [className, setClassName] = useState('');
     const [withHead, setWithHead] = useState(true);
     const [headSize, setHeadSize] = useState(10);
-    const [headColor, setHeadColor] = useState('pink');
+    const [headColor, setHeadColor] = useState('black');
     const [blockId, setBlockId] = useState('block1');
 
     const hoverHandlers = {
@@ -75,8 +76,6 @@ const Diagram: React.FC<{ scale: number }> = ({ scale }) => {
         setWithHead(!withHead); // ✅
         setBlockId(toggle ? 'block2' : 'block1'); // ✅
         setStrokeWidth(toggle ? 5 : 1); // ✅
-
-        // need to check hover path
     };
 
     const onClick: MouseEventHandler = (e) => {
@@ -92,17 +91,26 @@ const Diagram: React.FC<{ scale: number }> = ({ scale }) => {
                 defaultPosition={{ x: 50, y: 300 }}
                 scale={scale}
             >
-                <div id="block1" className="block" />
+                <div id={blockId} className="block" />
             </Draggable>
             <Draggable
                 onDrag={handleUpdate}
                 onStart={handleUpdate}
                 onStop={handleUpdate}
-                defaultPosition={{ x: 250, y: 500 }}
+                defaultPosition={{ x: 50, y: 400 }}
                 scale={scale}
             >
                 <div id="block2" className="block" />
             </Draggable>
+            {/* <Draggable
+                onDrag={handleUpdate}
+                onStart={handleUpdate}
+                onStop={handleUpdate}
+                defaultPosition={{ x: 350, y: 500 }}
+                scale={scale}
+            >
+                <div id="block3" className="block" />
+            </Draggable> */}
 
             {toggle && (
                 <Arrow
@@ -119,11 +127,26 @@ const Diagram: React.FC<{ scale: number }> = ({ scale }) => {
                     className={className}
                     onHover={toggle ? hoverHandlers[1] : hoverHandlers[2]}
                     onClick={onClick}
-                    label={<p className="label">baana-react</p>}
+                    // label={<p className="label">baana-react</p>}
                     useRegister={true}
                     Marker={CustomMarker}
+                    startSide="bottom"
+                    endSide="top"
                 />
             )}
+
+            {/* <Arrow
+                start={blockId}
+                end="block3"
+                color={color}
+                strokeWidth={strokeWidth}
+                headSize={headSize}
+                withHead={withHead}
+                headColor={headColor}
+                curviness={curviness}
+                className={className}
+                useRegister={true}
+            /> */}
 
             <button onClick={clickHandler} className="toggle">
                 toggle
@@ -134,13 +157,15 @@ const Diagram: React.FC<{ scale: number }> = ({ scale }) => {
 
 export const App = () => {
     const [scale, setScale] = useState(1);
+    const scaleRef = useRef(1);
 
     const onMouseWheel: WheelEventHandler = (e) => {
         setScale(scale - e.deltaY / 500);
+        scaleRef.current = scale - e.deltaY / 500;
     };
 
     return (
-        <ArrowsContextProvider scale={scale}>
+        <ArrowsContextProvider scale={scaleRef}>
             <Draggable scale={scale}>
                 <ArrowsContainer
                     className="dragContainer"

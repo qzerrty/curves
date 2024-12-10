@@ -5,7 +5,7 @@
 }
 
 body {
-    background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
+    /* background-image: radial-gradient(#e5e7eb 1px, transparent 1px); */
     background-size: 16px 16px;
 }
 
@@ -21,10 +21,14 @@ body {
     width: 100px;
     height: 50px;
 
-    background-color: blue;
+    background-color: #333;
 }
 
-#block1 {
+#block3 {
+    background-color: #ef0000;
+}
+
+/* #block1 {
     background-color: green;
 }
 
@@ -54,7 +58,7 @@ body {
 
 #block8 {
     background-color: burlywood;
-}
+} */
 
 .label {
     padding: 6px;
@@ -90,16 +94,17 @@ body {
 .dragContainer {
     width: 200%;
     height: 200vh;
+    margin-left: 100px;
 
-    background-color: #0001;
+    /* background-color: #0001; */
 }
 
-.baana__reduced-svg path {
+/* .baana__reduced-svg path {
     stroke: red;
-}
+} */
 
 .redStroke {
-    stroke: red;
+    stroke: #ef0000;
 }
 
 .greenFill {
@@ -110,4 +115,8 @@ body {
     position: absolute;
     left: 50vw;
     font-size: 16px;
+}
+
+.boldArrows path {
+    stroke-width: 3px;
 }

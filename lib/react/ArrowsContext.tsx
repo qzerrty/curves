@@ -8,51 +8,12 @@ import React, {
     useRef,
     useState,
 } from 'react';
-import { Point } from '../utils';
-import { TargetPointer } from './Arrow';
-
-export type ConfigType = {
-    color?: string;
-
-    useRegister?: boolean;
-
-    withHead?: boolean;
-    headColor?: string;
-    headSize?: number;
-
-    scale?: number;
-    offset?: {
-        start: Point;
-        end: Point;
-    };
-    curviness?: number;
-    strokeWidth?: number;
-};
-
-export type OffsetXY = {
-    offsetStartX?: number;
-    offsetStartY?: number;
-    offsetEndX?: number;
-    offsetEndY?: number;
-};
-
-export type ArrowsContextType = {
-    update(target?: HTMLElement): void;
-
-    _registerTarget(target: TargetPointer, handler: () => void): void;
-    _removeTarget(target: TargetPointer, handler: () => void): void;
-
-    _container: HTMLElement | null;
-    _svg: SVGSVGElement | null;
-    _defs: SVGDefsElement | null;
-    _config: ConfigType;
-
-    _unstableState: unknown;
-
-    _containerRef: React.RefObject<HTMLDivElement>;
-    _svgRef: React.RefObject<SVGSVGElement>;
-    _defsRef: React.RefObject<SVGDefsElement>;
-};
+import {
+    ArrowsContextType,
+    ConfigType,
+    OffsetXY,
+    RequiredConfigType,
+} from '../types';
 
 const defaultValue = {
     update: () => {},
@@ -61,11 +22,13 @@ const defaultValue = {
     _container: null,
     _svg: null,
     _defs: null,
+    _g: null,
     _config: {},
     _unstableState: null,
     _containerRef: { current: null },
     _svgRef: { current: null },
     _defsRef: { current: null },
+    _gRef: { current: null },
 };
 
 export const ArrowsContext = createContext<ArrowsContextType>(defaultValue);
@@ -94,14 +57,16 @@ export const ArrowsContextProvider: React.FC<
     const _containerRef = useRef<HTMLDivElement>(null);
     const _svgRef = useRef<SVGSVGElement>(null);
     const _defsRef = useRef<SVGDefsElement>(null);
+    const _gRef = useRef<SVGGElement>(null);
 
     const [_container, setContainer] = useState<HTMLDivElement | null>(
         _containerRef.current
     );
     const [_svg, setSVG] = useState<SVGSVGElement | null>(_svgRef.current);
     const [_defs, setDefs] = useState<SVGDefsElement | null>(_defsRef.current);
+    const [_g, setG] = useState<SVGGElement | null>(_gRef.current);
 
-    const offset = useMemo<ConfigType['offset']>(
+    const offset = useMemo<RequiredConfigType['offset']>(
         () => ({
             start: [offsetStartX ?? 0, offsetStartY ?? 0],
             end: [offsetEndX ?? 0, offsetEndY ?? 0],
@@ -151,6 +116,7 @@ export const ArrowsContextProvider: React.FC<
                 targetsWeakMap.current
                     .get(target)
                     ?.forEach((handler) => handler());
+            // TODO: брать позицию блока 1 раз здесь и прокидывать во все стрелки
             } else {
                 forceUpdate();
             }
@@ -162,6 +128,7 @@ export const ArrowsContextProvider: React.FC<
         setContainer(_containerRef.current);
         setSVG(_svgRef.current);
         setDefs(_defsRef.current);
+        setG(_gRef.current);
     }, []);
 
     const contextValue = useMemo(
@@ -169,9 +136,11 @@ export const ArrowsContextProvider: React.FC<
             _container,
             _svg,
             _defs,
+            _g,
             _containerRef,
             _svgRef,
             _defsRef,
+            _gRef,
             _config: {
                 color,
                 scale,
@@ -192,6 +161,7 @@ export const ArrowsContextProvider: React.FC<
             _container,
             _svg,
             _defs,
+            _g,
             color,
             scale,
             offset,

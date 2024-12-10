@@ -1,15 +1,12 @@
-import { ConfigType } from "./react/ArrowsContext";
+import { Point, PointObj, RequiredConfigType, Side, SVGProps } from './types';
 
-export type Point = [number, number];
-export type PointObj = { x: number; y: number };
-
-export const c_bezier = (
+const c_bezier = (
     p1: Point,
     p2: Point,
     p3: Point,
     p4: Point,
     t: number
-) => [
+): Point => [
     (1 - t) ** 3 * p1[0] +
         3 * (1 - t) ** 2 * t * p2[0] +
         3 * (1 - t) * t ** 2 * p3[0] +
@@ -23,15 +20,19 @@ export const c_bezier = (
 export const comparePointObjects = (a: PointObj, b: PointObj) =>
     a.x === b.x && a.y === b.y;
 
-export type SVGProps = {
-    center: Point;
-    d: (string | number)[];
-};
+/*
+    right, left = 0
+    left, right = 1
+    bottom, top = 2
+    top, bottom = 3
+*/
 
 export const getSVGProps = (
     start: PointObj,
     end: PointObj,
-    curviness: ConfigType['curviness'] = 1
+    startSide: Side,
+    endSide: Side,
+    curviness: RequiredConfigType['curviness']
 ) => {
     let diffX = end.x - start.x;
     const diffY = end.y - start.y;
@@ -41,34 +42,30 @@ export const getSVGProps = (
         d: [],
     };
 
+    const isHorizontalStart = ['right', 'left'].includes(startSide);
+    // const isVerticalStart = ['bottom', 'top'].includes(startSide);
+
+    // dX > 0 and [right, left]
+    // dx < 0 and [left, right]
+    // dy > 0 and [bottom, top]
+    // dy < 0 and [top, bottom]
     if (diffX > 0) {
         /**
          * diffX > 0
          */
-        const offsetX = (Math.abs(diffY) / 2) * curviness;
+        const offset = (Math.abs(isHorizontalStart ? diffY : diffX) / 2) * curviness;
 
         svgProps.center = [start.x + Math.abs(diffX) / 2, start.y + diffY / 2];
 
         const dots: Point[] = [
             [start.x, start.y],
-            [start.x + offsetX, start.y],
-            [end.x - offsetX, end.y],
+            [start.x + offset, start.y],
+            [end.x - offset, end.y],
             [end.x, end.y],
             svgProps.center,
         ];
 
-        svgProps.d = [
-            'M',
-            dots[0][0],
-            dots[0][1],
-            'C',
-            dots[1][0],
-            dots[1][1],
-            dots[2][0],
-            dots[2][1],
-            dots[3][0],
-            dots[3][1],
-        ];
+        svgProps.d = ['M', ...dots[0], 'C', ...dots[1], ...dots[2], ...dots[3]];
     } else if (diffY === 0 || Math.abs(diffX / diffY) > 4) {
         /**
          * start.y ~= end.y && diffX < 0
@@ -79,34 +76,17 @@ export const getSVGProps = (
             (diffY === 0 ? -1 : Math.sign(diffY)) *
             curviness;
 
-        const dots: Point[] = [
+        const dots: [Point, Point, Point, Point] = [
             [start.x, start.y],
             [start.x + offsetX, start.y + offsetY],
             [end.x - offsetX, start.y + offsetY],
             [end.x, end.y],
         ];
 
-        svgProps.center = c_bezier(
-            dots[0],
-            dots[1],
-            dots[2],
-            dots[3],
-            0.5
-        ) as Point;
+        svgProps.center = c_bezier(...dots, 0.5);
         dots.push(svgProps.center);
 
-        svgProps.d = [
-            'M',
-            dots[0][0],
-            dots[0][1],
-            'C',
-            dots[1][0],
-            dots[1][1],
-            dots[2][0],
-            dots[2][1],
-            dots[3][0],
-            dots[3][1],
-        ];
+        svgProps.d = ['M', ...dots[0], 'C', ...dots[1], ...dots[2], ...dots[3]];
     } else {
         /**
          * diffX < 0
@@ -133,18 +113,13 @@ export const getSVGProps = (
 
         svgProps.d = [
             'M',
-            dots[0][0],
-            dots[0][1],
+            ...dots[0],
             'Q',
-            dots[1][0],
-            dots[1][1],
-            dots[2][0],
-            dots[2][1],
+            ...dots[1],
+            ...dots[2],
             'Q',
-            dots[3][0],
-            dots[3][1],
-            dots[4][0],
-            dots[4][1],
+            ...dots[3],
+            ...dots[4],
         ];
     }
 
@@ -211,38 +186,56 @@ export const update = (
     startRef: HTMLElement,
     endRef: HTMLElement,
     parent: HTMLElement,
-    offset: ConfigType['offset'],
-    scale: ConfigType['scale'] = 1,
+    offset: RequiredConfigType['offset'],
+    startSide: Side,
+    endSide: Side,
+    scale: number,
 ) => {
     const rect1 = startRef.getBoundingClientRect();
     const rect2 = endRef.getBoundingClientRect();
 
     const containerRect = parent.getBoundingClientRect();
 
-    const start = {
+    const getCoordsBySide = (rect: DOMRect, side: Side) => ({
         x:
-            (rect1.x +
-                rect1.width +
-                (offset?.start?.[0] ?? 0) -
+            (rect.x +
+                (side === 'right'
+                    ? rect.width
+                    : ['top', 'bottom'].includes(side)
+                    ? rect.width / 2
+                    : 0) +
+                offset.start[0] -
                 containerRect.x) /
-            (scale ?? 1),
+            scale,
         y:
-            (rect1.y +
-                rect1.height / 2 +
-                (offset?.start?.[1] ?? 0) -
+            (rect.y +
+                (side === 'bottom'
+                    ? rect.height
+                    : ['right', 'left'].includes(side)
+                    ? rect.height / 2
+                    : 0) +
+                offset.start[1] -
                 containerRect.y) /
-            (scale ?? 1),
-    };
+            scale,
+    });
 
-    const end = {
-        x: (rect2.x + (offset?.end?.[0] ?? 0) - containerRect.x) / (scale ?? 1),
-        y:
-            (rect2.y +
-                rect2.height / 2 +
-                (offset?.end?.[1] ?? 0) -
-                containerRect.y) /
-            (scale ?? 1),
-    };
+    const start = getCoordsBySide(rect1, startSide);
+    const end = getCoordsBySide(rect2, endSide);
 
     return [start, end];
+};
+
+export const debounce = (
+    mainFunction: (...args: unknown[]) => unknown,
+    delay: number
+) => {
+    let timer: ReturnType<typeof setTimeout>;
+
+    return (...args: unknown[]) => {
+        clearTimeout(timer);
+
+        timer = setTimeout(() => {
+            mainFunction(...args);
+        }, delay);
+    };
 };

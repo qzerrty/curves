@@ -7,7 +7,6 @@ import {
     useState,
 } from 'react';
 import {
-    PointObj,
     comparePointObjects,
     computeHoverStrokeWidth,
     getSVGProps,
@@ -16,11 +15,17 @@ import {
     update,
 } from '../utils';
 import { createPortal } from 'react-dom';
-import { useArrowsContext, ConfigType, OffsetXY } from './ArrowsContext';
+import { useArrowsContext } from './ArrowsContext';
 import { DefaultMarker, MarkerPropsType } from './Marker';
 import React from 'react';
-
-export type TargetPointer = React.RefObject<HTMLElement> | string;
+import {
+    ConfigType,
+    OffsetXY,
+    PointObj,
+    RequiredConfigType,
+    Side,
+    TargetPointer,
+} from '../types';
 
 type ArrowProps = {
     start: TargetPointer;
@@ -30,6 +35,9 @@ type ArrowProps = {
     onClick?: MouseEventHandler;
     onHover?: MouseEventHandler;
     label?: JSX.Element;
+
+    startSide?: Side;
+    endSide?: Side;
 
     Marker?: React.FC<MarkerPropsType>;
 } & Pick<
@@ -69,12 +77,15 @@ export const Arrow: React.FC<ArrowProps> = ({
     headColor,
     headSize,
 
+    startSide = 'right',
+    endSide = 'left',
+
     onHover,
     onClick,
 }) => {
     const {
-        _svg,
         _defs,
+        _g,
         _config,
         _container,
         _unstableState,
@@ -92,9 +103,12 @@ export const Arrow: React.FC<ArrowProps> = ({
     const _color = color ?? _config.color ?? 'black';
     const _curviness = curviness ?? _config.curviness ?? 1;
     const _strokeWidth = strokeWidth ?? _config.strokeWidth ?? 1;
-    const _scale = scale ?? _config.scale ?? 1;
+    const _scale = scale?.current ?? _config.scale?.current ?? 1;
 
-    const offset = useMemo<ConfigType['offset']>(
+    const _headSize = headSize ?? _config.headSize;
+    const _headColor = headColor ?? _config.headColor ?? _color;
+
+    const offset = useMemo<RequiredConfigType['offset']>(
         () => ({
             start: [
                 offsetStartX ?? _config.offset?.start?.[0] ?? 0,
@@ -140,6 +154,8 @@ export const Arrow: React.FC<ArrowProps> = ({
             endElement,
             _container,
             offset,
+            startSide,
+            endSide,
             _scale
         );
 
@@ -153,20 +169,28 @@ export const Arrow: React.FC<ArrowProps> = ({
 
         lastXY.current = [startXY, endXY];
 
-        const svgProps = getSVGProps(startXY, endXY, _curviness);
+        const svgProps = getSVGProps(
+            startXY,
+            endXY,
+            startSide,
+            endSide,
+            _curviness
+        );
         const d = svgProps.d.join(' ');
-        const hoverD = svgProps.d.concat(reversePath(svgProps.d)).join(' ');
+        const hoverD = d + reversePath(svgProps.d).join(' ');
 
-        if (arrowRef.current) {
-            arrowRef.current.setAttribute('d', d);
-        }
-        if (hoverPathRef.current) {
-            hoverPathRef.current.setAttribute('d', hoverD);
-        }
-        if (labelRef.current) {
-            labelRef.current.style.left = `${svgProps.center[0]}px`;
-            labelRef.current.style.top = `${svgProps.center[1]}px`;
-        }
+        requestAnimationFrame(() => {
+            if (arrowRef.current) {
+                arrowRef.current.setAttribute('d', d);
+            }
+            if (hoverPathRef.current) {
+                hoverPathRef.current.setAttribute('d', hoverD);
+            }
+            if (labelRef.current) {
+                labelRef.current.style.left = `${svgProps.center[0]}px`;
+                labelRef.current.style.top = `${svgProps.center[1]}px`;
+            }
+        })
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [
         start,
@@ -210,15 +234,15 @@ export const Arrow: React.FC<ArrowProps> = ({
                           {withMarker && (
                               <Marker
                                   id={markerId.current}
-                                  color={headColor ?? _color}
-                                  size={headSize}
+                                  color={_headColor}
+                                  size={_headSize}
                               />
                           )}
                       </>,
                       _defs
                   )
                 : null}
-            {_svg
+            {_g
                 ? createPortal(
                       <>
                           <path
@@ -243,7 +267,7 @@ export const Arrow: React.FC<ArrowProps> = ({
                               />
                           )}
                       </>,
-                      _svg
+                      _g
                   )
                 : null}
             {_container && label

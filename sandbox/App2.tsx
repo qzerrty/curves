@@ -1,6 +1,7 @@
 import React, {
     ReactNode,
     useEffect,
+    useRef,
     useState,
     WheelEventHandler,
 } from 'react';
@@ -35,16 +36,21 @@ const height = 50;
 const xdiff = width * 1.5;
 const ydiff = height * 1.5;
 
-const Diagram: React.FC<{ scale: number; reduceSVG: () => void }> = ({
-    scale,
-    reduceSVG,
-}) => {
+const Diagram: React.FC<{
+    scale: number;
+    reduceSVG: () => void;
+    increaseSVG: () => void;
+}> = ({ scale, reduceSVG, increaseSVG }) => {
     const { update } = useArrowsContext();
 
     const handleUpdate: DraggableEventHandler = (mouseEvent, dragEvent) => {
         mouseEvent.stopPropagation();
         update(dragEvent.node);
-        reduceSVG && reduceSVG();
+        reduceSVG();
+    };
+
+    const handleStop = () => {
+        increaseSVG();
     };
 
     const [blocks, setBlocks] = useState<ReactNode[]>([]);
@@ -62,7 +68,7 @@ const Diagram: React.FC<{ scale: number; reduceSVG: () => void }> = ({
                         <Draggable
                             onDrag={handleUpdate}
                             onStart={handleUpdate}
-                            onStop={handleUpdate}
+                            onStop={handleStop}
                             defaultPosition={{
                                 x: width * j + xdiff * (j + 1),
                                 y: height * i + ydiff * (i + 1),
@@ -107,11 +113,13 @@ const Diagram: React.FC<{ scale: number; reduceSVG: () => void }> = ({
 
 export const App = () => {
     const [scale, setScale] = useState(1);
+    const scaleRef = useRef(1);
 
-    const { reducedClassName, reduceSVG } = useReducedGraphics();
+    const { reducedClassName, reduceSVG, increaseSVG } = useReducedGraphics();
 
     const onMouseWheel: WheelEventHandler = (e) => {
         setScale(scale - e.deltaY / 500);
+        scaleRef.current = scale - e.deltaY / 500;
         reduceSVG();
     };
 
@@ -119,18 +127,22 @@ export const App = () => {
         reduceSVG();
     };
 
+    const handleStop = () => {
+        increaseSVG();
+    };
+
     return (
         <>
             <ArrowsContextProvider
                 color="black"
                 headSize={12}
-                scale={scale}
+                scale={scaleRef}
                 useRegister={true}
             >
                 <Draggable
-                    onDrag={handleDrag}
+                    // onDrag={handleDrag}
                     onStart={handleDrag}
-                    onStop={handleDrag}
+                    onStop={handleStop}
                     scale={scale}
                 >
                     <div
@@ -141,8 +153,13 @@ export const App = () => {
                     >
                         <ArrowsContainer
                             className={`dragContainer ${reducedClassName}`}
+                            // className={`dragContainer`}
                         >
-                            <Diagram scale={scale} reduceSVG={reduceSVG} />
+                            <Diagram
+                                scale={scale}
+                                reduceSVG={reduceSVG}
+                                increaseSVG={increaseSVG}
+                            />
                         </ArrowsContainer>
                     </div>
                 </Draggable>

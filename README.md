@@ -34,7 +34,7 @@ const App = () => (
 | `start`        | `React.RefObject<HTMLElement> \| string` (block id) | -                                   |
 | `end`          | `React.RefObject<HTMLElement> \| string` (block id) | -                                   |
 | `color`        | `string`                                            | `color`                             |
-| `scale`        | `number`                                            | `scale`                             |
+| `scale`        | `React.RefObject<number>`                           | `scale`                             |
 | `curviness`    | `number`                                            | `curviness`                         |
 | `strokeWidth`  | `number`                                            | `strokeWidth`                       |
 | `useRegister`  | `boolean`                                           | `useRegister`                       |

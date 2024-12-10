@@ -16,9 +16,9 @@ import {
 const Diagram: React.FC<{ scale: number }> = ({ scale }) => {
     const { update } = useArrowsContext();
 
-    const handleUpdate: DraggableEventHandler = (mouseEvent) => {
+    const handleUpdate: DraggableEventHandler = (mouseEvent, dragEvent) => {
         mouseEvent.stopPropagation();
-        update();
+        update(dragEvent.node);
     };
 
     const [showArrows, setShowArrows] = useState(true);
@@ -134,7 +134,7 @@ const Diagram: React.FC<{ scale: number }> = ({ scale }) => {
                 <div id="block6" className="block" ref={block6} />
             </Draggable>
 
-            <Draggable
+            {/* <Draggable
                 onDrag={handleUpdate}
                 onStart={handleUpdate}
                 onStop={handleUpdate}
@@ -151,48 +151,44 @@ const Diagram: React.FC<{ scale: number }> = ({ scale }) => {
                 scale={scale}
             >
                 <div id="block8" className="block" />
-            </Draggable>
+            </Draggable> */}
 
             {showArrows && (
                 <>
-                    <Arrow start={block1} end={block2} color="pink" />
-                    <Arrow start={block3} end={block4} label={cLabel} />
-                    <Arrow
-                        start={block1}
-                        end={block3}
-                        color="#333"
-                        headColor="pink"
-                    />
+                    <Arrow start={block1} end={block2} />
+                    <Arrow start={block3} end={block4} className="redStroke" />
+                    <Arrow start={block1} end={block3} className="redStroke" />
                     <Arrow
                         start={block3}
                         end={block5}
-                        headSize={headSize}
-                        withHead={withHead}
-                        headColor={headColor}
-                        curviness={curviness}
-                        offsetStartY={offset}
-                        offsetEndY={-offset}
-                        className={className}
+                        // headSize={headSize}
+                        // withHead={withHead}
+                        // headColor={headColor}
+                        // curviness={curviness}
+                        // offsetStartY={offset}
+                        // offsetEndY={-offset}
+                        // className={className}
                         onHover={toggle ? hoverHandlers[2] : hoverHandlers[1]}
                         onClick={onClick}
+                        className="redStroke"
                     />
                     <Arrow
                         start={block5}
                         end={block6}
-                        label={
-                            <div className="label custom-label">
-                                <p>hello world</p>
-                                <button onClick={clickHandler}>Action!</button>
-                            </div>
-                        }
+                        // label={
+                        //     <div className="label custom-label">
+                        //         <p>hello world</p>
+                        //         <button onClick={clickHandler}>Action!</button>
+                        //     </div>
+                        // }
                     />
-                    <Arrow start={block6} end={eRef} color={color} />
-                    <Arrow
+                    {/* <Arrow start={block6} end={eRef} /> */}
+                    {/* <Arrow
                         start={blockId}
                         end="block8"
-                        className="redStroke greenFill"
+                        // className="redStroke greenFill"
                     />
-                    <Arrow start="block8" end="block8" />
+                    <Arrow start="block8" end="block8" /> */}
                 </>
             )}
 
@@ -203,20 +199,23 @@ const Diagram: React.FC<{ scale: number }> = ({ scale }) => {
 
 export const App = () => {
     const [scale, setScale] = useState(1);
+    const scaleRef = useRef(1);
 
     const onMouseWheel: WheelEventHandler = (e) => {
         setScale(scale - e.deltaY / 500);
+        scaleRef.current = scale - e.deltaY / 500;
     };
 
     return (
         <>
-            <ArrowsContextProvider scale={scale}>
+            <ArrowsContextProvider scale={scaleRef} withHead headSize={6}>
                 <Draggable scale={scale}>
                     <ArrowsContainer
                         style={{
                             scale: String(scale),
                         }}
                         onWheel={onMouseWheel}
+                        className="boldArrows"
                     >
                         <Diagram scale={scale} />
                     </ArrowsContainer>
