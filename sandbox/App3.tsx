@@ -91,7 +91,7 @@ const Diagram: React.FC<{ scale: number }> = ({ scale }) => {
                 defaultPosition={{ x: 50, y: 300 }}
                 scale={scale}
             >
-                <div id={blockId} className="block" />
+                <div id={blockId} className="block green" />
             </Draggable>
             <Draggable
                 onDrag={handleUpdate}
@@ -130,8 +130,8 @@ const Diagram: React.FC<{ scale: number }> = ({ scale }) => {
                     // label={<p className="label">baana-react</p>}
                     useRegister={true}
                     Marker={CustomMarker}
-                    startSide="right"
-                    endSide="left"
+                    startSide="bottom"
+                    endSide="top"
                 />
             )}
 

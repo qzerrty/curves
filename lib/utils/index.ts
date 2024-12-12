@@ -1,33 +1,9 @@
-import { Point, PointObj, RequiredConfigType, Side, SVGProps } from '../types';
-import { getType1 } from './getPath';
-import { isType1 } from './whichPathType';
-
-const c_bezier = (
-    p1: Point,
-    p2: Point,
-    p3: Point,
-    p4: Point,
-    t: number
-): Point => [
-    (1 - t) ** 3 * p1[0] +
-        3 * (1 - t) ** 2 * t * p2[0] +
-        3 * (1 - t) * t ** 2 * p3[0] +
-        t ** 3 * p4[0],
-    (1 - t) ** 3 * p1[1] +
-        3 * (1 - t) ** 2 * t * p2[1] +
-        3 * (1 - t) * t ** 2 * p3[1] +
-        t ** 3 * p4[1],
-];
+import { PointObj, RequiredConfigType, Side, SVGProps } from '../types';
+import { getType1, getType2, getType3 } from './getPath';
+import { isType1, isType2, isType3 } from './whichPathType';
 
 export const comparePointObjects = (a: PointObj, b: PointObj) =>
     a.x === b.x && a.y === b.y;
-
-/*
-    right, left = 0
-    left, right = 1
-    bottom, top = 2
-    top, bottom = 3
-*/
 
 export const getSVGProps = (
     start: PointObj,
@@ -36,16 +12,13 @@ export const getSVGProps = (
     endSide: Side,
     curviness: RequiredConfigType['curviness']
 ) => {
-    let diffX = end.x - start.x;
+    const diffX = end.x - start.x;
     const diffY = end.y - start.y;
 
     const svgProps: SVGProps = {
         center: [0, 0],
         d: [],
     };
-
-    // const isHorizontalStart = ['right', 'left'].includes(startSide);
-    // const isVerticalStart = ['bottom', 'top'].includes(startSide);
 
     const type1 = isType1({
         start,
@@ -57,15 +30,7 @@ export const getSVGProps = (
         curviness,
     });
 
-    // dX > 0 and [right, left]
-    // dx < 0 and [left, right]
-    // dy > 0 and [bottom, top]
-    // dy < 0 and [top, bottom]
     if (type1.isType) {
-        /**
-         * diffX > 0
-         */
-
         const { center, d } = getType1({
             start,
             end,
@@ -77,61 +42,57 @@ export const getSVGProps = (
 
         svgProps.center = center;
         svgProps.d = d;
-    } else if (diffY === 0 || Math.abs(diffX / diffY) > 4) {
-        /**
-         * start.y ~= end.y && diffX < 0
-         */
-        const offsetX = Math.log(Math.abs(diffX)) * 50 * curviness;
-        const offsetY =
-            (Math.abs(diffY) + 110) *
-            (diffY === 0 ? -1 : Math.sign(diffY)) *
-            curviness;
+        return svgProps;
+    }
 
-        const dots: [Point, Point, Point, Point] = [
-            [start.x, start.y],
-            [start.x + offsetX, start.y + offsetY],
-            [end.x - offsetX, start.y + offsetY],
-            [end.x, end.y],
-        ];
+    const type2 = isType2({
+        start,
+        end,
+        startSide,
+        endSide,
+        dx: diffX,
+        dy: diffY,
+        curviness,
+    });
 
-        svgProps.center = c_bezier(...dots, 0.5);
-        dots.push(svgProps.center);
+    if (type2.isType) {
+        const { center, d } = getType2({
+            start,
+            end,
+            dx: diffX,
+            dy: diffY,
+            curviness,
+            ...type1,
+        });
 
-        svgProps.d = ['M', ...dots[0], 'C', ...dots[1], ...dots[2], ...dots[3]];
-    } else {
-        /**
-         * diffX < 0
-         */
+        svgProps.center = center;
+        svgProps.d = d;
+        return svgProps;
+    }
+    
+    const type3 = isType3({
+        start,
+        end,
+        startSide,
+        endSide,
+        dx: diffX,
+        dy: diffY,
+        curviness,
+    });
 
-        if (diffX > -10) {
-            diffX = -10;
-        }
+    if (type3.isType) {
+        const { center, d } = getType3({
+            start,
+            end,
+            dx: diffX,
+            dy: diffY,
+            curviness,
+            ...type1,
+        });
 
-        const offsetX = Math.log(Math.abs(diffX)) * 40 * curviness;
-
-        svgProps.center = [
-            start.x - Math.abs(diffX) / 2,
-            start.y + (Math.abs(diffY) / 2) * Math.sign(diffY),
-        ];
-
-        const dots: Point[] = [
-            [start.x, start.y],
-            [start.x + offsetX, start.y],
-            svgProps.center,
-            [end.x - offsetX, end.y],
-            [end.x, end.y],
-        ];
-
-        svgProps.d = [
-            'M',
-            ...dots[0],
-            'Q',
-            ...dots[1],
-            ...dots[2],
-            'Q',
-            ...dots[3],
-            ...dots[4],
-        ];
+        svgProps.center = center;
+        svgProps.d = d;
+        return svgProps;
     }
 
     return svgProps;
