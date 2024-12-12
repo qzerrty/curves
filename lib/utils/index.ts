@@ -1,4 +1,6 @@
-import { Point, PointObj, RequiredConfigType, Side, SVGProps } from './types';
+import { Point, PointObj, RequiredConfigType, Side, SVGProps } from '../types';
+import { getType1 } from './getPath';
+import { isType1 } from './whichPathType';
 
 const c_bezier = (
     p1: Point,
@@ -42,30 +44,39 @@ export const getSVGProps = (
         d: [],
     };
 
-    const isHorizontalStart = ['right', 'left'].includes(startSide);
+    // const isHorizontalStart = ['right', 'left'].includes(startSide);
     // const isVerticalStart = ['bottom', 'top'].includes(startSide);
+
+    const type1 = isType1({
+        start,
+        end,
+        startSide,
+        endSide,
+        dx: diffX,
+        dy: diffY,
+        curviness,
+    });
 
     // dX > 0 and [right, left]
     // dx < 0 and [left, right]
     // dy > 0 and [bottom, top]
     // dy < 0 and [top, bottom]
-    if (diffX > 0) {
+    if (type1.isType) {
         /**
          * diffX > 0
          */
-        const offset = (Math.abs(isHorizontalStart ? diffY : diffX) / 2) * curviness;
 
-        svgProps.center = [start.x + Math.abs(diffX) / 2, start.y + diffY / 2];
+        const { center, d } = getType1({
+            start,
+            end,
+            dx: diffX,
+            dy: diffY,
+            curviness,
+            ...type1,
+        });
 
-        const dots: Point[] = [
-            [start.x, start.y],
-            [start.x + offset, start.y],
-            [end.x - offset, end.y],
-            [end.x, end.y],
-            svgProps.center,
-        ];
-
-        svgProps.d = ['M', ...dots[0], 'C', ...dots[1], ...dots[2], ...dots[3]];
+        svgProps.center = center;
+        svgProps.d = d;
     } else if (diffY === 0 || Math.abs(diffX / diffY) > 4) {
         /**
          * start.y ~= end.y && diffX < 0
@@ -145,43 +156,6 @@ export const computeHoverStrokeWidth = (
     return strokeWidth * scale > hoverSize ? strokeWidth : hoverSize / scale;
 };
 
-export const reversePath = (d: SVGProps['d']) => {
-    const opQueue = [];
-    const pStack = [];
-
-    let i = 0;
-    for (const el of d) {
-        if (typeof el === 'string') {
-            opQueue.push(el);
-        } else {
-            if (i % 2 === 0) {
-                pStack.push([el]);
-            } else {
-                pStack[pStack.length - 1].push(el);
-            }
-            i++;
-        }
-    }
-
-    const expectedPointsCount: Record<string, number> = {
-        M: 1,
-        C: 3,
-        Q: 2,
-    };
-
-    const result: SVGProps['d'] = [];
-
-    i = pStack.length - 1;
-    for (const cmd of opQueue) {
-        result.push(cmd);
-        for (let j = 0; j < expectedPointsCount[cmd]; j++) {
-            result.push(...pStack[i--]);
-        }
-    }
-
-    return result;
-};
-
 export const update = (
     startRef: HTMLElement,
     endRef: HTMLElement,
@@ -189,7 +163,7 @@ export const update = (
     offset: RequiredConfigType['offset'],
     startSide: Side,
     endSide: Side,
-    scale: number,
+    scale: number
 ) => {
     const rect1 = startRef.getBoundingClientRect();
     const rect2 = endRef.getBoundingClientRect();
@@ -225,17 +199,5 @@ export const update = (
     return [start, end];
 };
 
-export const debounce = (
-    mainFunction: (...args: unknown[]) => unknown,
-    delay: number
-) => {
-    let timer: ReturnType<typeof setTimeout>;
-
-    return (...args: unknown[]) => {
-        clearTimeout(timer);
-
-        timer = setTimeout(() => {
-            mainFunction(...args);
-        }, delay);
-    };
-};
+export { reversePath } from './reversePath';
+export { debounce } from './debounce';
