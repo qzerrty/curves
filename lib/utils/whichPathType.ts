@@ -63,28 +63,28 @@ export const isType2 = ({
 
     if (startSide === 'right' && endSide === 'left') {
         return {
-            isType: dy === 0 || Math.abs(dx / dy) > 4,
+            isType: dy === 0 || Math.abs(dx / dy) > 2,
             isRotated90,
             isReversed,
         };
     }
     if (startSide === 'left' && endSide === 'right') {
         return {
-            isType: dy === 0 || Math.abs(dx / dy) > 4,
+            isType: dy === 0 || Math.abs(dx / dy) > 2,
             isRotated90,
             isReversed,
         };
     }
     if (startSide === 'top' && endSide === 'bottom') {
         return {
-            isType: dx === 0 || Math.abs(dy / dx) > 4,
+            isType: dx === 0 || Math.abs(dy / dx) > 2,
             isRotated90,
             isReversed,
         };
     }
     if (startSide === 'bottom' && endSide === 'top') {
         return {
-            isType: dx === 0 || Math.abs(dy / dx) > 4,
+            isType: dx === 0 || Math.abs(dy / dx) > 2,
             isRotated90,
             isReversed,
         };
