@@ -1,5 +1,6 @@
 import { Point } from '../types';
 import { c_bezier } from './c_bezier';
+import { clamp } from './clamp';
 import { PathProps } from './path.types';
 
 export const getType1 = ({
@@ -105,6 +106,25 @@ export const getType3 = ({
         ...dots[3],
         ...dots[4],
     ];
+
+    return { center, d };
+};
+
+export const getType4 = ({ start, end, dx, dy, curviness }: PathProps) => {
+    const offsetX = (Math.abs(dx) / 2) * curviness;
+    const offsetY = (Math.abs(dy) / 2) * curviness;
+
+    const dots: [Point, Point, Point, Point] = [
+        [start.x, start.y],
+        [start.x + offsetX, start.y],
+        [end.x - offsetX / 3, end.y - 100 - offsetY],
+        [end.x, end.y],
+    ];
+
+    const dydxrelation = clamp(dy / dx / 2, -0.2, 0.2);
+    const center = c_bezier(...dots, 0.5 + dydxrelation);
+
+    const d = ['M', ...dots[0], 'C', ...dots[1], ...dots[2], ...dots[3]];
 
     return { center, d };
 };

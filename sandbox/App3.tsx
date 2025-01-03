@@ -127,7 +127,7 @@ const Diagram: React.FC<{ scale: number }> = ({ scale }) => {
                     className={className}
                     onHover={toggle ? hoverHandlers[1] : hoverHandlers[2]}
                     onClick={onClick}
-                    // label={<p className="label">baana-react</p>}
+                    label={<p className="label">baana-react</p>}
                     useRegister={true}
                     Marker={CustomMarker}
                     startSide="left"

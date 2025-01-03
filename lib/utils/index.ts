@@ -1,6 +1,6 @@
 import { PointObj, RequiredConfigType, Side, SVGProps } from '../types';
-import { getType1, getType2, getType3 } from './getPath';
-import { isType1, isType2, isType3 } from './whichPathType';
+import { getType1, getType2, getType3, getType4 } from './getPath';
+import { isType1, isType2, isType3, isType4 } from './whichPathType';
 
 export const comparePointObjects = (a: PointObj, b: PointObj) =>
     a.x === b.x && a.y === b.y;
@@ -62,14 +62,14 @@ export const getSVGProps = (
             dx: diffX,
             dy: diffY,
             curviness,
-            ...type1,
+            ...type2,
         });
 
         svgProps.center = center;
         svgProps.d = d;
         return svgProps;
     }
-    
+
     const type3 = isType3({
         start,
         end,
@@ -87,7 +87,32 @@ export const getSVGProps = (
             dx: diffX,
             dy: diffY,
             curviness,
-            ...type1,
+            ...type3,
+        });
+
+        svgProps.center = center;
+        svgProps.d = d;
+        return svgProps;
+    }
+
+    const type4 = isType4({
+        start,
+        end,
+        startSide,
+        endSide,
+        dx: diffX,
+        dy: diffY,
+        curviness,
+    });
+
+    if (type4.isType) {
+        const { center, d } = getType4({
+            start,
+            end,
+            dx: diffX,
+            dy: diffY,
+            curviness,
+            ...type4,
         });
 
         svgProps.center = center;
