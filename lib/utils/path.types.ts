@@ -8,6 +8,7 @@ export type PathProps = {
     dy: number;
     isRotated90?: boolean;
     isReversed?: boolean;
+    isPaired?: boolean;
 };
 
 export type PathTypeDetectProps = PathProps & {

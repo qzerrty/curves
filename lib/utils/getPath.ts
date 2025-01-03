@@ -1,4 +1,4 @@
-import { Point } from '../types';
+import { Point, PointObj } from '../types';
 import { c_bezier } from './c_bezier';
 import { clamp } from './clamp';
 import { PathProps } from './path.types';
@@ -110,14 +110,32 @@ export const getType3 = ({
     return { center, d };
 };
 
-export const getType4 = ({ start, end, dx, dy, curviness }: PathProps) => {
-    const offsetX = (Math.abs(dx) / 2) * curviness;
+export const getType4 = ({
+    start,
+    end,
+    dx,
+    dy,
+    curviness,
+    isReversed,
+    isRotated90,
+    isPaired,
+}: PathProps) => {
+    const offsetX = Math.max(Math.abs(dx) / 2, 100) * curviness;
     const offsetY = (Math.abs(dy) / 2) * curviness;
+
+    const get2point = (point: PointObj): Point => [
+        point.x + offsetX * (isRotated90 ? -1 : 1),
+        point.y,
+    ];
+    const get3point = (point: PointObj): Point => [
+        point.x - (offsetX / 3) * (isRotated90 ? -1 : 1),
+        point.y - (100 + offsetY) * (isPaired ? -1 : 1),
+    ];
 
     const dots: [Point, Point, Point, Point] = [
         [start.x, start.y],
-        [start.x + offsetX, start.y],
-        [end.x - offsetX / 3, end.y - 100 - offsetY],
+        isReversed ? get3point(start) : get2point(start),
+        isReversed ? get2point(end) : get3point(end),
         [end.x, end.y],
     ];
 

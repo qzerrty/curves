@@ -130,8 +130,8 @@ const Diagram: React.FC<{ scale: number }> = ({ scale }) => {
                     label={<p className="label">baana-react</p>}
                     useRegister={true}
                     Marker={CustomMarker}
-                    startSide="right"
-                    endSide="top"
+                    startSide="bottom"
+                    endSide="left"
                 />
             )}
 
