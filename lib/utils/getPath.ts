@@ -14,7 +14,7 @@ export const getType1 = ({
 }: PathProps) => {
     const offset = (Math.abs(isRotated90 ? dy : dx) / 2) * curviness;
 
-    const center: Point = [start.x + Math.abs(dx) / 2, start.y + dy / 2];
+    const center: Point = [start.x + dx / 2, start.y + dy / 2];
 
     const offsetX = offset * (isReversed ? -1 : 1) * (isRotated90 ? 0 : 1);
     const offsetY = offset * (isReversed ? -1 : 1) * (isRotated90 ? 1 : 0);
